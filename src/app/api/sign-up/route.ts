@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // ✅ Validate with Zod
+    // Validate with Zod
     const result = signUpSchema.safeParse(body);
     if (!result.success) {
       return Response.json(

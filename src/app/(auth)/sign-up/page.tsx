@@ -3,12 +3,12 @@ import {zodResolver} from "@hookform/resolvers/zod"
 import {useForm} from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
-import { useDebugValue, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useDebounceCallback } from 'usehooks-ts'
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { signupSchema } from "@/Schemas/signUpSchema"
-import axios, { Axios, AxiosError } from 'axios'
+import axios, {  AxiosError } from 'axios'
 import { ApiResponse } from "@/types/ApiResponse"
 import { Form } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { setRequestMeta } from "next/dist/server/request-meta"
 import { Loader2 } from "lucide-react"
 
 const page = () => {
@@ -28,7 +27,6 @@ const page = () => {
   const [isCheckingUsername,setIsCheckingUsername] = useState(false)
   const[isSubmitting, setIsSubmitting] = useState(false) 
   const debouced = useDebounceCallback(setUsername,300)
-  // const toast1 = toast("hello")
   const router = useRouter()
 
   //zodd implementation

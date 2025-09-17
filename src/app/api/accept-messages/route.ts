@@ -1,9 +1,8 @@
 // app/api/verify-code/route.ts
-import  {auth}  from "@/app/api/auth/[...nextauth]/route"; // Adjust the path as needed
+import  {auth}  from "@/app/api/auth/[...nextauth]/route"; 
 import dbConnect from "@/lib/dbConnect";
 import { User } from "next-auth";
 import UserModel from "@/model/user";
-import { acceptMessagesSchema } from "@/Schemas/acceptMessages";
 
 export async function POST(request: Request) {
     await dbConnect();

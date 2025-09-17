@@ -22,7 +22,7 @@ const VerifyAccount = () => {
   const form = useForm<z.infer<typeof verifySchema>>({
   resolver: zodResolver(verifySchema),
   defaultValues: {
-    verifyCode: "", // 👈 avoids uncontrolled → controlled issue
+    verifyCode: "", 
   },
 })
 
@@ -34,7 +34,7 @@ const VerifyAccount = () => {
         code: data.verifyCode,
       })
 
-      router.replace("/sign-in") // ✅ fixed path
+      router.replace("/sign-in") 
     } catch (error) {
       console.error(error)
       const axiosError = error as AxiosError<ApiResponse>

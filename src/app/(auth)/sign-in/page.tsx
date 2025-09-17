@@ -14,8 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { setRequestMeta } from "next/dist/server/request-meta";
-import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { signInSchema } from "@/Schemas/signInSchema";
 import { toast } from "sonner";
@@ -86,14 +84,14 @@ const page = () => {
             </Button>
           </form>
         </Form>
-        {/* <div className="text-center mt-4">
+        <div className="text-center mt-4">
           <p>
-            Alreay member ?{" "}
-            <Link href="/sign-in" className="text-blue-600 hover:text-blue-800">
-              Sign in
+            Not a member ?{" "}
+            <Link href="/sign-up" className="text-blue-600 hover:text-blue-800">
+              Sign Up
             </Link>
           </p>
-        </div> */}
+        </div>
       </div>
     </div>
   );
