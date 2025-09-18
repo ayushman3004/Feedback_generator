@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Message } from "@/model/user";
@@ -43,11 +43,12 @@ const Page = () => {
       setIsSwitchLoading(false);
     }
   }, [setValue]);
-
   const fetchMessages = useCallback(async (refresh: boolean = false) => {
     setIsLoading(true);
     try {
-      const response = await axios.get<ApiResponse>("/api/get-messages");
+      const response = await axios.get<ApiResponse>("/api/get-messages", {
+        withCredentials: true,
+      });
       setMessages(response.data.messages || []);
       if (refresh) toast("Refreshed Messages");
     } catch (error) {

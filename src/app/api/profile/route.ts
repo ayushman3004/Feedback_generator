@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { getSession } from "next-auth/react";
 import { success } from "zod";
 import { User } from "next-auth";
+import { NextResponse } from "next/server";
 
 export async function POST(request:Request){
     await dbConnect()
@@ -11,7 +12,7 @@ export async function POST(request:Request){
     const session = await getSession()
      const user :User = session?.user
     if(!session  || !session.user){
-        return Response.json({
+        return NextResponse.json({
             success: false,
             message: "Please Login first"
         })
@@ -19,14 +20,14 @@ export async function POST(request:Request){
     try {
         const findUser = await UserModel.findById({id : user._id})
         if(!findUser){
-            return Response.json({
+            return NextResponse.json({
             success: false,
             message: "No user Found"
         })
-        return Response.json(findUser)
+        return NextResponse.json(findUser)
         }
     } catch (error) {
-        return Response.json({
+        return NextResponse.json({
             success: false,
             message: error
         })

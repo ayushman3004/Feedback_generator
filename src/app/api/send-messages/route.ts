@@ -1,6 +1,7 @@
 import { Message } from "@/model/user";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/user";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   await dbConnect();
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
   try {
     const user = await UserModel.findOne({ username });
     if (!user) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message: "User not found",
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     //isAccepting Messages
 
     if(!user.isAcceptingMessages){
-        return Response.json({
+        return NextResponse.json({
           success: false,
           message: "User not found",
         },
@@ -31,14 +32,14 @@ export async function POST(request: Request) {
     const newMessage = {content,createdAt : new Date()}
     user.messages.push(newMessage as Message)
     await user.save()
-    return Response.json({
+    return NextResponse.json({
           success: true,
           message: "Message sent Successfully",
         },
         { status: 200 }
     )
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: 'something went wrong',

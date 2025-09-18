@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import { z } from "zod";
 import { usernameValidation } from "@/Schemas/signUpSchema";
+import { NextResponse } from "next/server";
 
 const signUpSchema = z.object({
   username: usernameValidation,
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     // Validate with Zod
     const result = signUpSchema.safeParse(body);
     if (!result.success) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message: "failed"
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     });
 
     if (existingUserVerifiedByUsername) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: "Username is already taken" },
         { status: 400 }
       );
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
     if (existingUserByEmail) {
       if (existingUserByEmail.isVerified) {
-        return Response.json(
+        return NextResponse.json(
           { success: false, message: "User already exists" },
           { status: 400 }
         );
@@ -82,19 +83,19 @@ export async function POST(request: Request) {
     const emailResponse = await sendVerificationEmail(email, username, verifyCode);
 
     if (!emailResponse.success) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: emailResponse.message },
         { status: 500 }
       );
     }
 
-    return Response.json(
+    return NextResponse.json(
       { success: true, message: "User registered successfully. Please verify your email." },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error registering user", error);
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: "Error registering user" },
       { status: 500 }
     );

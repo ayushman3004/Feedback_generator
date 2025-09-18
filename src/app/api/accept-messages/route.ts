@@ -3,6 +3,7 @@ import  {auth}  from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/dbConnect";
 import { User } from "next-auth";
 import UserModel from "@/model/user";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
     await dbConnect();
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
   const user :User = session?.user
 
   if(!session || !session.user){
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: 'User not authenticated',
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
         {new: true}
     )
     if(!updatedUser){
-        return Response.json(
+        return NextResponse.json(
       {
         success: false,
         message: 'Error Accepting Messages',
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     );
     }
 
-    return Response.json(
+    return NextResponse.json(
       {
         success: true,
         message: 'Message acceptance updated successfully',
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       },
       { status: 200 })
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: 'Error Accepting Messages',
@@ -60,7 +61,7 @@ export async function GET(request:Request) {
   const user :User = session?.user
 
   if(!session || !session.user){
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: 'User not authenticated',
@@ -74,7 +75,7 @@ export async function GET(request:Request) {
      const foundUser = await UserModel.findById(userId);
    
      if(!foundUser){
-       return Response.json(
+       return NextResponse.json(
          {
            success: false,
            message: 'User not Found',
@@ -82,7 +83,7 @@ export async function GET(request:Request) {
          { status: 404 });
      }
    
-     return Response.json(
+     return NextResponse.json(
          {
            success: true,
            isAcceptingMessages : foundUser.isAcceptingMessages
@@ -90,7 +91,7 @@ export async function GET(request:Request) {
          { status: 200 });
    }
   catch (error) {
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: 'Error Accepting Messages',

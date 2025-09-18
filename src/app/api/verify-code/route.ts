@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/user";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   await dbConnect();
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     const decodedUsername = decodeURI(username);
     const user = await UserModel.findOne({ username: decodedUsername });
     if (!user) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message: "User not found",
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const isCodeValid = user.verifyCode === code;
     const isNotexpiredCode = new Date(user.verifyCodeExpiry) > new Date();
     if (!username || !code) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: "Username and code required" },
         { status: 400 }
       );
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       user.isVerified = true;
       await user.save();
 
-      return Response.json(
+      return NextResponse.json(
         {
           success: true,
           message: "User verified successfully",
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
         { status: 200 }
       );
     } else if (!isCodeValid) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message: "incorrect verification code",
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     } else {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           message:
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error checking username:", error);
-    return Response.json(
+    return NextResponse.json(
       {
         success: false,
         message: "Error verifing code",
