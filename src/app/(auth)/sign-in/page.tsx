@@ -50,7 +50,7 @@ const page = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-800">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
+          <h1 className="text-3xl  tracking-tight lg:text-3xl mb-6">
             Welcome Back to Feedback Generator
           </h1>
           <p className="mb-4">Log In to see your secret conversations</p>
@@ -62,8 +62,8 @@ const page = () => {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>email</FormLabel>
-                  <Input placeholder="email" {...field} />
+                  <FormLabel>Email/Username</FormLabel>
+                  <Input placeholder="email/Username" {...field} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -74,7 +74,7 @@ const page = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
-                  <Input type="password" {...field} />
+                  <Input type="password" {...field} placeholder="Password"/>
                   <FormMessage />
                 </FormItem>
               )}

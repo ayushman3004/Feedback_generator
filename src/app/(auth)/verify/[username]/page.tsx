@@ -1,51 +1,71 @@
-"use client"
-
-import { useRouter, useParams } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import axios, { AxiosError } from "axios"
-import { useState } from "react"
-import { verifySchema } from "@/Schemas/verifySchema" // adjust path
-import { ApiResponse } from "@/types/ApiResponse" // adjust path
-import { 
-  Form, FormField, FormItem, FormLabel, FormMessage 
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+"use client";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { useRouter, useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios, { AxiosError } from "axios";
+import { useState } from "react";
+import { verifySchema } from "@/Schemas/verifySchema"; 
+import { ApiResponse } from "@/types/ApiResponse"; 
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { useSession } from "next-auth/react";
 
 const VerifyAccount = () => {
-  const router = useRouter()
-  const params = useParams<{ username: string }>()
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const params = useParams<{ username: string }>();
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof verifySchema>>({
-  resolver: zodResolver(verifySchema),
-  defaultValues: {
-    verifyCode: "", 
-  },
-})
+    resolver: zodResolver(verifySchema),
+    defaultValues: {
+      verifyCode: "",
+    },
+  });
 
   const onSubmit = async (data: z.infer<typeof verifySchema>) => {
     try {
-      setLoading(true)
-      await axios.post(`/api/verify-code`, {
+      setLoading(true);
+      const response = await axios.post(`/api/verify-code`, {
         username: params.username,
         code: data.verifyCode,
-      })
-
-      router.replace("/sign-in") 
+      });
+      console.log(response)
+      // if(response.status === 200){
+      //     const { data: session } = useSession();
+      //     if(session && session.user){
+            
+      //       router.replace("/dashboard");
+      //     }
+      // }
+      router.replace("/sign-in");
+      
     } catch (error) {
-      console.error(error)
-      const axiosError = error as AxiosError<ApiResponse>
-      let errorMessage = axiosError.response?.data?.message || "Something went wrong"
+      console.error(error);
+      const axiosError = error as AxiosError<ApiResponse>;
+      let errorMessage =
+        axiosError.response?.data?.message || "Something went wrong";
 
       // ✅ show error under the input field
-      form.setError("verifyCode", { message: errorMessage })
+      form.setError("verifyCode", { message: errorMessage });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
@@ -65,7 +85,20 @@ const VerifyAccount = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Verification Code</FormLabel>
-                  <Input {...field} placeholder="code" />
+                  {/* <Input {...field} placeholder="code" /> */}
+                  <InputOTP maxLength={6} {...field}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
                   <FormMessage />
                 </FormItem>
               )}
@@ -77,7 +110,7 @@ const VerifyAccount = () => {
         </Form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default VerifyAccount
+export default VerifyAccount;

@@ -31,7 +31,6 @@ export async function POST(request: Request) {
 
     const { username, email, password } = result.data;
 
-    // ✅ Continue with existing logic
     const existingUserVerifiedByUsername = await UserModel.findOne({
       username,
       isVerified: true,
