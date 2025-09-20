@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Message } from "@/model/user";
@@ -18,8 +18,10 @@ const Page = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
+  const [acceptMessagesState, setAcceptMessagesState] = useState<boolean | null>(null);
 
   const { data: session } = useSession();
+
   const form = useForm({
     resolver: zodResolver(acceptMessagesSchema),
   });
@@ -30,30 +32,26 @@ const Page = () => {
   const fetchAcceptMessage = useCallback(async () => {
     setIsSwitchLoading(true);
     try {
-      const response = await axios.get("/api/accept-messages", {
-        withCredentials: true, // ✅ ensures cookies are sent
-      });
-      setValue("acceptMessages", response.data.isAcceptingMessages);
+      const response = await axios.get("/api/accept-messages", { withCredentials: true });
+      setAcceptMessagesState(response.data.isAcceptingMessages); // ✅ update local state
+      setValue("acceptMessages", response.data.isAcceptingMessages); // keep RHF in sync
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
-      toast(
-        axiosError.response?.data.message || "Failed to fetch message settings"
-      );
+      toast(axiosError.response?.data.message || "Failed to fetch message settings");
     } finally {
       setIsSwitchLoading(false);
     }
   }, [setValue]);
+
   const fetchMessages = useCallback(async (refresh: boolean = false) => {
     setIsLoading(true);
     try {
-      const response = await axios.get<ApiResponse>("/api/get-messages", {
-        withCredentials: true,
-      });
+      const response = await axios.get<ApiResponse>("/api/get-messages", { withCredentials: true });
       setMessages(response.data.messages || []);
       if (refresh) toast("Refreshed Messages");
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
-      toast(axiosError.response?.data.message);
+      toast(axiosError.response?.data.message || "Failed to fetch messages");
     } finally {
       setIsLoading(false);
     }
@@ -71,22 +69,24 @@ const Page = () => {
     try {
       await axios.delete(`/api/delete-message/${messageId}`);
       toast("Message deleted");
-      fetchMessages(true); // refresh from DB
-    } catch (error) {
+      fetchMessages(true);
+    } catch {
       toast("Failed to delete message");
     }
   };
 
-  const handleSwitchChange = async () => {
+  const handleSwitchChange = async (val: boolean) => {
+    setIsSwitchLoading(true);
     try {
-      const response = await axios.post<ApiResponse>("/api/accept-messages", {
-        acceptMessages: !acceptMessages,
-      });
-      setValue("acceptMessages", !acceptMessages);
+      const response = await axios.post<ApiResponse>("/api/accept-messages", { acceptMessages: val });
+      setAcceptMessagesState(val); // update local state
+      setValue("acceptMessages", val); // keep RHF in sync
       toast(response.data.message);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast(axiosError.response?.data.message || "Failed to update setting");
+    } finally {
+      setIsSwitchLoading(false);
     }
   };
 
@@ -123,15 +123,18 @@ const Page = () => {
         </div>
       )}
 
-      <div className="mb-4">
-        <Switch
-          {...register("acceptMessages")}
-          checked={acceptMessages}
-          onCheckedChange={handleSwitchChange}
-          disabled={isSwitchLoading}
-        />
+      <div className="mb-4 flex items-center">
+        {acceptMessagesState !== null ? (
+          <Switch
+            checked={acceptMessagesState}
+            onCheckedChange={handleSwitchChange}
+            disabled={isSwitchLoading}
+          />
+        ) : (
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        )}
         <span className="ml-2">
-          Accept Messages: {acceptMessages ? "On" : "Off"}
+          Accept Messages: {acceptMessagesState ? "On" : "Off"}
         </span>
       </div>
       <Separator />
@@ -144,11 +147,7 @@ const Page = () => {
           fetchMessages(true);
         }}
       >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <RefreshCcw className="h-4 w-4" />
-        )}
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
       </Button>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">

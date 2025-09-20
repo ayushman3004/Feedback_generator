@@ -4,7 +4,9 @@ export const usernameValidation = z
   .string()
   .min(6, "Username must be at least 6 characters long")
   .max(20, "Username must be at most 20 characters long")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores");
+  // .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores")
+  .refine((val) => /^[A-Z]/.test(val), {
+    message: "First letter must be capitalized",});
 
 export const signupSchema = z.object({
   username: usernameValidation,

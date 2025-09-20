@@ -1,97 +1,184 @@
-"use client";
-import React, { useCallback, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { Message } from "@/model/user";
-import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { AxiosError } from "axios";
-import { ApiResponse } from "@/types/ApiResponse";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Loader2, RefreshCcw } from "lucide-react";
-import { MessageCard } from "@/components/MessageCard";
-import { messageSchema } from "@/Schemas/messageSchema";
+'use client';
 
-const Page = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSwitchLoading, setIsSwitchLoading] = useState(false);
+import React, { useState } from 'react';
+import axios, { AxiosError } from 'axios';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { CardHeader, CardContent, Card } from '@/components/ui/card';
+import { useCompletion } from '@ai-sdk/react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import * as z from 'zod';
+import { ApiResponse } from '@/types/ApiResponse';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { messageSchema } from '@/Schemas/messageSchema';
 
-  const { data: session } = useSession();
-  const form = useForm({
+const specialChar = '||';
+
+const parseStringMessages = (messageString: string) =>
+  messageString ? messageString.split(specialChar) : [];
+
+export default function SendMessage() {
+  const params = useParams<{ username: string }>();
+  const username = params.username;
+
+  const form = useForm<z.infer<typeof messageSchema>>({
     resolver: zodResolver(messageSchema),
+    defaultValues: { content: '' },
   });
-  const { register, watch, setValue } = form;
 
+  const messageContent = form.watch('content');
 
-  
-  const username = session?.user?.username;
-  
+  const handleMessageClick = (message: string) => {
+    form.setValue('content', message);
+  };
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestedMessages, setSuggestedMessages] = useState<string[]>([]);
+  const [isSuggestLoading, setIsSuggestLoading] = useState(false);
+
+  const { complete } = useCompletion({
+    api: '/api/suggest-messages',
+  });
+
+  const onSubmit = async (data: z.infer<typeof messageSchema>) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post<ApiResponse>('/api/send-message', {
+        ...data,
+        username,
+      });
+
+      toast(response.data.message);
+      form.reset({ content: '' });
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast('Error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSuggestedMessages = async () => {
+  setIsSuggestLoading(true);
+  setSuggestedMessages([]);
+
+  try {
+    const prompt = `Generate 5 short anonymous messages someone could send to @${username}. Separate them with "${specialChar}"`;
+
+    const completion = await complete(prompt);
+
+    if (completion) {
+      setSuggestedMessages(parseStringMessages(completion));
+    }
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+  } finally {
+    setIsSuggestLoading(false);
+  }
+};
+
 
   return (
-    <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-slate-700 rounded w-full max-w-6xl">
-      <h1 className="text-4xl font-bold mb-4">User Dashboard</h1>
+    <div className="container mx-auto my-8 p-6 text-white rounded max-w-4xl">
+      <h1 className="text-4xl font-bold mb-6 text-center">Send your Message</h1>
 
-      {username && (
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={profileUrl}
-              disabled
-              className="input input-bordered w-full p-2 mr-2 bg-slate-800"
-            />
-            <Button onClick={copyToClipboard}>Copy</Button>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="content"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Send Anonymous Message to {username}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Write your anonymous message here"
+                    className="resize-none h-50 "
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex justify-center">
+            <Button type="submit" disabled={isLoading || !messageContent}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                'Send It'
+              )}
+            </Button>
           </div>
+        </form>
+      </Form>
+
+      {/* <div className="space-y-4 my-8">
+        <div className="space-y-2">
+          <Button
+            onClick={fetchSuggestedMessages}
+            className="my-4"
+            disabled={isSuggestLoading}
+          >
+            {isSuggestLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Suggest Messages'
+            )}
+          </Button>
+          <p>Click on any message below to select it.</p>
         </div>
-      )}
 
-      <div className="mb-4">
-        <Switch
-          {...register("acceptMessages")}
-          checked={acceptMessages}
-          onCheckedChange={handleSwitchChange}
-          disabled={isSwitchLoading}
-        />
-        <span className="ml-2">
-          Accept Messages: {acceptMessages ? "On" : "Off"}
-        </span>
-      </div>
-      <Separator />
+        <Card>
+          <CardHeader>
+            <h3 className="text-xl font-semibold">Messages</h3>
+          </CardHeader>
+          <CardContent className="flex flex-col space-y-4">
+            {suggestedMessages.length === 0 && !isSuggestLoading ? (
+              <p>No messages yet. Click "Suggest Messages".</p>
+            ) : (
+              suggestedMessages.map((message, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  onClick={() => handleMessageClick(message)}
+                >
+                  {message}
+                </Button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div> */}
 
-      <Button
-        className="mt-4 text-black"
-        variant="outline"
-        onClick={(e) => {
-          e.preventDefault();
-          fetchMessages(true);
-        }}
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <RefreshCcw className="h-4 w-4" />
-        )}
-      </Button>
+      <Separator className="my-6" />
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {messages.length > 0 ? (
-          messages.map((message) => (
-            <MessageCard
-              key={message.id}
-              message={message}
-              onMessageDelete={handleDeleteMessage}
-            />
-          ))
-        ) : (
-          <p>No messages to display.</p>
-        )}
+      <div className="text-center">
+        <div className="mb-4">Want your Own Anonymous Message Board</div>
+        <Link href="/">
+          <Button>Create Your Account</Button>
+        </Link>
       </div>
     </div>
   );
-};
-
-export default Page;
+}

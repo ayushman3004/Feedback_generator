@@ -54,7 +54,7 @@ const page = () => {
         setUsernameMeassage(
           axiosError.response?.data.message ?? "error checking username"
         )
-      }
+      }finally{setIsCheckingUsername(false)}
     }
     checkUsername()
   }, [username])
@@ -97,8 +97,8 @@ const page = () => {
                     debouced(e.target.value)
                   }}
                   />
-                  {isCheckingUsername && <Loader2 className="animate-spin " />}
-                  <p className={`text-sm ${username.length === 0 ? '' : `${usernameMessage ? 'text-green-500': 'text-red-500'}`}`}> {usernameMessage}</p>
+                  {isCheckingUsername?<Loader2 className="animate-spin " /> : ''}
+                  <p className={`text-sm ${username.length === 0 ? '' : `${usernameMessage ? 'text-red-500': 'text-red-500'}`}`}> {usernameMessage}</p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -111,6 +111,7 @@ const page = () => {
                   <FormLabel>email</FormLabel>
                   <Input placeholder="email" {...field} 
                   />
+                  <p className=' text-gray-400 text-sm'>We will send you a verification code</p>
                   <FormMessage />
                 </FormItem>
               )}
