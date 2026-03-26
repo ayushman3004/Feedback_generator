@@ -1,5 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
@@ -33,23 +34,25 @@ const SignIn = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
-    setIsSubmitting(true);
-    const logIn = await signIn("credentials", {
-      redirect: false,
-      identifier: data.identifier,
-      password: data.password,
-    });
+  setIsSubmitting(true);
 
-    setIsSubmitting(false);
+  const logIn = await signIn("credentials", {
+    redirect: false,
+    identifier: data.identifier,
+    password: data.password,
+  });
 
-    if (logIn?.error) {
-      toast("User login failed");
-    }
+  setIsSubmitting(false);
 
-    if (logIn?.url) {
-      router.replace("/dashboard");
-    }
-  };
+  if (logIn?.error) {
+    toast("User login failed");
+  }
+
+  if (logIn?.ok) {
+    await getSession();
+    router.replace("/dashboard"); // ✅ FIXED
+  }
+};
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
       <Spotlight />
