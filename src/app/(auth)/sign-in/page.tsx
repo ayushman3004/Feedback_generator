@@ -36,7 +36,7 @@ const SignIn = () => {
 const onSubmit = async (data: z.infer<typeof signInSchema>) => {
   setIsSubmitting(true);
 
-  const logIn = await signIn("credentials", {
+  const res = await signIn("credentials", {
     redirect: false,
     identifier: data.identifier,
     password: data.password,
@@ -44,13 +44,15 @@ const onSubmit = async (data: z.infer<typeof signInSchema>) => {
 
   setIsSubmitting(false);
 
-  if (logIn?.error) {
+  // ❌ if (res?.ok) ← REMOVE THIS
+
+  if (res?.error) {
     toast("User login failed");
+    return;
   }
 
-  if (logIn?.ok) {
-    window.location.href = "/dashboard"; // 🔥 FINAL FIX
-  }
+  // ✅ FORCE REDIRECT
+  router.push("/dashboard");
 };
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
