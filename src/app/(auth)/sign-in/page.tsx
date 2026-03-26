@@ -33,7 +33,7 @@ const SignIn = () => {
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+const onSubmit = async (data: z.infer<typeof signInSchema>) => {
   setIsSubmitting(true);
 
   const logIn = await signIn("credentials", {
@@ -49,8 +49,7 @@ const SignIn = () => {
   }
 
   if (logIn?.ok) {
-    await getSession();
-    router.replace("/dashboard"); // ✅ FIXED
+    window.location.href = "/dashboard"; // 🔥 FINAL FIX
   }
 };
   return (
