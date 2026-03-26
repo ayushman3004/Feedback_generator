@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation"; 
 import { Message } from "@/model/user";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -23,7 +24,8 @@ const Page = () => {
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
   const [acceptMessagesState, setAcceptMessagesState] = useState<boolean | null>(null);
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession(); // ✅ FIX
+const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(acceptMessagesSchema),
@@ -31,7 +33,13 @@ const Page = () => {
   const { register, watch, setValue } = form;
 
   const acceptMessages = watch("acceptMessages");
+  useEffect(() => {
+  if (status === "loading") return;
 
+  if (status === "unauthenticated") {
+    router.push("/sign-in");
+  }
+}, [status, router]);
   const fetchAcceptMessage = useCallback(async () => {
     setIsSwitchLoading(true);
     try {
@@ -61,11 +69,11 @@ const Page = () => {
   }, []);
 
   useEffect(() => {
-    if (session?.user) {
-      fetchMessages();
-      fetchAcceptMessage();
-    }
-  }, [session, fetchMessages, fetchAcceptMessage]);
+  if (status === "authenticated") {
+    fetchMessages();
+    fetchAcceptMessage();
+  }
+}, [status, fetchMessages, fetchAcceptMessage]);
 
   const handleDeleteMessage = async (messageId: string) => {
     setMessages(messages.filter((m) => m._id !== messageId));
@@ -106,7 +114,14 @@ const Page = () => {
       toast.success("Link copied to clipboard! 📋");
     }
   };
-
+if (status === "loading") {
+  return (
+    <div className="text-white text-center mt-20">
+      Loading dashboard...
+    </div>
+  );
+}
+if (!session) return null;
   return (
     <div className="min-h-screen w-full bg-slate-950 relative overflow-hidden flex flex-col items-center pt-24 pb-12 px-4 selection:bg-indigo-500/30">
 
