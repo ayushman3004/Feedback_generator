@@ -1,6 +1,6 @@
 "use client"
-import {zodResolver} from "@hookform/resolvers/zod"
-import {useForm} from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -8,7 +8,7 @@ import { useDebounceCallback } from 'usehooks-ts'
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { signupSchema } from "@/Schemas/signUpSchema"
-import axios, {  AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios'
 import { ApiResponse } from "@/types/ApiResponse"
 import { Form } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,15 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Spotlight } from "@/components/ui/spotlight-new";
 import { Loader2 } from "lucide-react"
 
-const page = () => {
-  const [username,setUsername] = useState('')
-  const [usernameMessage,setUsernameMeassage] = useState('')
-  const [isCheckingUsername,setIsCheckingUsername] = useState(false)
-  const[isSubmitting, setIsSubmitting] = useState(false) 
-  const debouced = useDebounceCallback(setUsername,300)
+const SignUp = () => {
+  const [username, setUsername] = useState('')
+  const [usernameMessage, setUsernameMeassage] = useState('')
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const debouced = useDebounceCallback(setUsername, 300)
   const router = useRouter()
 
   //zodd implementation
@@ -34,35 +35,49 @@ const page = () => {
     {
       resolver: zodResolver(signupSchema),
       defaultValues: {
-        username : '',
-        email:'',
+        username: '',
+        email: '',
         password: ''
       }
     }
   )
   useEffect(() => {
     const checkUsername = async () => {
-      if(username){
-        setIsCheckingUsername(true)
+      // Don't call API if username is empty
+      if (!username) {
         setUsernameMeassage('')
+        setIsCheckingUsername(false)
+        return
       }
-      try{
+
+      setIsCheckingUsername(true)
+      setUsernameMeassage('') // clear old messages
+
+      try {
         const response = await axios.get(`/api/check-username-unique?username=${username}`)
         setUsernameMeassage(response.data.message)
-      }catch(error){
+      } catch (error) {
         const axiosError = error as AxiosError<ApiResponse>
         setUsernameMeassage(
-          axiosError.response?.data.message ?? "error checking username"
+          axiosError.response?.data.message ?? "Error checking username"
         )
-      }finally{setIsCheckingUsername(false)}
+      } finally {
+        setIsCheckingUsername(false)
+      }
     }
-    checkUsername()
+
+    // Only verify if username is not empty
+    if (username) {
+      checkUsername()
+    } else {
+      setUsernameMeassage('') // Reset if user clears input
+    }
   }, [username])
 
-  const onSubmit = async (data : z.infer<typeof signupSchema>) => {
+  const onSubmit = async (data: z.infer<typeof signupSchema>) => {
     setIsSubmitting(true);
     try {
-      const response = await axios.post<ApiResponse>('/api/sign-up',data)
+      const response = await axios.post<ApiResponse>('/api/sign-up', data)
       toast("Success")
       router.replace(`/verify/${username}`)
       setIsSubmitting(false)
@@ -75,13 +90,14 @@ const page = () => {
     }
   }
   return (
-<div className="flex justify-center items-center min-h-screen bg-gray-800">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
-          Feedback Generator
+    <div className="min-h-screen w-full flex items-center justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
+      <Spotlight />
+      <div className="z-10 w-full max-w-md p-8 space-y-8 bg-black/50 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl relative">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-white/90">
+            Join Feedback Generator
           </h1>
-          <p className="mb-4">Sign in to continue to build your secret conversations</p>
+          <p className="text-neutral-400">Sign up to start your secret conversations</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -90,16 +106,21 @@ const page = () => {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <Input placeholder="username" {...field} 
-                  onChange={(e) => {
-                    field.onChange(e)
-                    debouced(e.target.value)
-                  }}
+                  <FormLabel className="text-neutral-300">Username</FormLabel>
+                  <Input
+                    placeholder="username"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      debouced(e.target.value)
+                    }}
+                    className="bg-neutral-900/50 border-neutral-800 text-white placeholder:text-neutral-600 focus-visible:ring-neutral-700"
                   />
-                  {isCheckingUsername?<Loader2 className="animate-spin " /> : ''}
-                  <p className={`text-sm ${username.length === 0 ? '' : `${usernameMessage ? 'text-red-500': 'text-red-500'}`}`}> {usernameMessage}</p>
-                  <FormMessage />
+                  {isCheckingUsername && <Loader2 className="h-4 w-4 animate-spin text-white" />}
+                  <p className={`text-sm ${usernameMessage === "Username is unique" ? 'text-green-500' : 'text-red-500'}`}>
+                    {usernameMessage}
+                  </p>
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
@@ -108,11 +129,14 @@ const page = () => {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>email</FormLabel>
-                  <Input placeholder="email" {...field} 
+                  <FormLabel className="text-neutral-300">Email</FormLabel>
+                  <Input
+                    placeholder="email"
+                    {...field}
+                    className="bg-neutral-900/50 border-neutral-800 text-white placeholder:text-neutral-600 focus-visible:ring-neutral-700"
                   />
-                  <p className=' text-gray-400 text-sm'>We will send you a verification code</p>
-                  <FormMessage />
+                  <p className='text-xs text-neutral-500'>We will send you a verification code</p>
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
@@ -121,27 +145,36 @@ const page = () => {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <Input type="password" {...field} />
-                  <FormMessage />
+                  <FormLabel className="text-neutral-300">Password</FormLabel>
+                  <Input
+                    type="password"
+                    {...field}
+                    className="bg-neutral-900/50 border-neutral-800 text-white placeholder:text-neutral-600 focus-visible:ring-neutral-700"
+                  />
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
-            <Button className='w-full' type="submit" disabled ={isSubmitting}>
-                {
-                    isSubmitting ? (
-                        <>
-                            <Loader2  className="mr-2 h-2 w-2 animate-spin"/>
-                        </>
-                    ):('Signup')
-                }
+            <Button
+              className='w-full bg-slate-100 text-black hover:bg-slate-200 transition-all font-semibold'
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {
+                isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Please wait
+                  </>
+                ) : ('Signup')
+              }
             </Button>
           </form>
         </Form>
         <div className="text-center mt-4">
-          <p>
-            Alreay member ?{' '}
-            <Link href="/sign-in" className="text-blue-600 hover:text-blue-800">
+          <p className="text-neutral-400 text-sm">
+            Already a member?{' '}
+            <Link href="/sign-in" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
               Sign in
             </Link>
           </p>
@@ -151,4 +184,4 @@ const page = () => {
   )
 }
 
-export default page
+export default SignUp

@@ -1,31 +1,58 @@
-// import { createOpenAI } from "@ai-sdk/openai";
-import { google } from '@ai-sdk/google';
-import { streamText } from "ai";
+import { google } from "@ai-sdk/google";
+import { generateText } from "ai";
 import { NextResponse } from "next/server";
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
-const google1 = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
-});
-
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    
-const prompt =
-      "Create a list of three open-ended and engaging questions formatted as a single string. Each question should be separated by '||'. These questions are for an anonymous social messaging platform, like Qooh.me, and should be suitable for a diverse audience. Avoid personal or sensitive topics, focusing instead on universal themes that encourage friendly interaction. For example, your output should be structured like this: 'What’s a hobby you’ve recently started?||If you could have dinner with any historical figure, who would it be?||What’s a simple thing that makes you happy?'. Ensure the questions are intriguing, foster curiosity, and contribute to a positive and welcoming conversational environment.Create EXACTLY three questions separated strictly by '||'. Do not add any explanations, markdown, or extra text.";
+    const body = await req.json();
+    const prompt = body.prompt || body.messages?.[0]?.content;
 
+    if (!prompt) {
+      return NextResponse.json(
+        { message: "Prompt is required" },
+        { status: 400 },
+      );
+    }
 
-    const response = await streamText({
-      model: google("gemini-2.5-pro"), // ✅ use real model
-      messages: [{ role: "user", content: prompt }],
+    // ✅ Debug: check API key
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      console.error("❌ Missing GOOGLE_GENERATIVE_AI_API_KEY");
+      return NextResponse.json(
+        { message: "API key not configured" },
+        { status: 500 },
+      );
+    }
+
+    console.log("✅ Prompt received:", prompt);
+
+    const result = await generateText({
+      model: google("gemini-2.5-flash"),
+      prompt,
     });
-    // console.log("AI response:", response);
 
-    return response.toTextStreamResponse();
-  } catch (error) {
-    console.error("suggest-messages error:", error);
-    return NextResponse.json({ message: "Error Connecting with AI" }, { status: 500 });
+    // ✅ Extra safety
+    if (!result || !result.text) {
+      console.error("❌ Empty response from Gemini:", result);
+      return NextResponse.json(
+        { message: "Empty response from AI" },
+        { status: 500 },
+      );
+    }
+
+    console.log("✅ Gemini response:", result.text);
+
+    return NextResponse.json({ text: result.text });
+  } catch (error: any) {
+    // ✅ FULL DEBUG (this is the key part)
+    console.error("🔥 FULL ERROR:", error);
+    console.error("🔥 MESSAGE:", error?.message);
+    console.error("🔥 STACK:", error?.stack);
+
+    return NextResponse.json(
+      { message: error?.message || "Error Connecting with AI" },
+      { status: 500 },
+    );
   }
 }

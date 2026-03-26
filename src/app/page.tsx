@@ -2,17 +2,8 @@
 
 import { Spotlight } from "@/components/ui/spotlight-new";
 import Link from "next/link";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import messages from "@/messages.json";
-import AutoPlay from "embla-carousel-autoplay";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -44,33 +35,17 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Carousel */}
-        <div className="mt-16 w-full flex justify-center">
-          <Carousel
-            plugins={[AutoPlay({ delay: 3000 })]}
-            className="w-[90%] max-w-lg"
-          >
-            <CarouselContent>
-              {messages.map((message, index) => (
-                <CarouselItem key={index}>
-                  <div className="p-3">
-                    <Card className="bg-white/10 backdrop-blur-md text-white shadow-lg border border-white/10">
-                      <CardHeader className="font-bold text-lg text-center">
-                        {message.title}
-                      </CardHeader>
-                      <CardContent className="flex items-center justify-center p-6">
-                        <p className="text-base md:text-lg font-medium text-justify">
-                          {message.content}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="text-white" />
-            <CarouselNext className="text-white" />
-          </Carousel>
+        {/* Infinite Moving Cards */}
+        <div className="mt-16 w-full flex flex-col items-center justify-center overflow-hidden rounded-md">
+          <InfiniteMovingCards
+            items={messages.map((m) => ({
+              quote: m.content,
+              name: m.received,
+              title: m.title,
+            }))}
+            direction="right"
+            speed="slow"
+          />
         </div>
       </div>
 
