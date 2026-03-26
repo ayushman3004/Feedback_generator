@@ -1,10 +1,9 @@
-// app/api/auth/[...nextauth]/options.ts
 import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import dbConnect from "@/lib/dbConnect"
 import UserModel from "@/model/user"
-import NextAuth from "next-auth"
+
 export const authOptions: NextAuthConfig = {
   providers: [
     Credentials({
@@ -34,7 +33,6 @@ export const authOptions: NextAuthConfig = {
 
         if (!isPasswordCorrect) throw new Error("Incorrect password")
 
-        // ✅ IMPORTANT FIX
         return {
           _id: user._id.toString(),
           email: user.email,
@@ -56,7 +54,7 @@ export const authOptions: NextAuthConfig = {
 
   secret: process.env.NEXTAUTH_SECRET,
 
-  trustHost: true, // ✅ CRITICAL FIX
+  trustHost: true,
 
   callbacks: {
     async session({ session, token }) {
@@ -80,4 +78,3 @@ export const authOptions: NextAuthConfig = {
     },
   },
 }
-export default NextAuth(authOptions)
