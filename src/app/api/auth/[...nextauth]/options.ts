@@ -5,7 +5,6 @@ import bcrypt from "bcryptjs"
 import dbConnect from "@/lib/dbConnect"
 import UserModel from "@/model/user"
 import NextAuth from "next-auth"
-
 export const authOptions: NextAuthConfig = {
   providers: [
     Credentials({
@@ -17,26 +16,31 @@ export const authOptions: NextAuthConfig = {
       },
       async authorize(credentials: any): Promise<any> {
         await dbConnect()
-        try {
-          const user = await UserModel.findOne({
-            $or: [
-              { email: credentials.identifier },
-              { username: credentials.identifier },
-            ],
-          })
 
-          if (!user) throw new Error("No user found with this email/username")
-          if (!user.isVerified) throw new Error("Please verify your email")
+        const user = await UserModel.findOne({
+          $or: [
+            { email: credentials.identifier },
+            { username: credentials.identifier },
+          ],
+        })
 
-          const isPasswordCorrect = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
-          if (!isPasswordCorrect) throw new Error("Incorrect password")
+        if (!user) throw new Error("No user found")
+        if (!user.isVerified) throw new Error("Verify email")
 
-          return user
-        } catch (err: any) {
-          throw new Error(err.message || "Authorization failed")
+        const isPasswordCorrect = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
+
+        if (!isPasswordCorrect) throw new Error("Incorrect password")
+
+        // ✅ IMPORTANT FIX
+        return {
+          _id: user._id.toString(),
+          email: user.email,
+          username: user.username,
+          isVerified: user.isVerified,
+          isAcceptingMessages: user.isAcceptingMessages,
         }
       },
     }),
@@ -52,6 +56,8 @@ export const authOptions: NextAuthConfig = {
 
   secret: process.env.NEXTAUTH_SECRET,
 
+  trustHost: true, // ✅ CRITICAL FIX
+
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {
@@ -62,9 +68,10 @@ export const authOptions: NextAuthConfig = {
       }
       return session
     },
+
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id?.toString()
+        token._id = user._id as string
         token.isVerified = user.isVerified
         token.isAcceptingMessages = user.isAcceptingMessages
         token.username = user.username
