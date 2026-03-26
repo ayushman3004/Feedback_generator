@@ -13,11 +13,23 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const queryParams = {
-      username: searchParams.get('username') ?? '',
-    };
-    console.log(queryParams)
-    const result = UsernameQuerySchema.safeParse(queryParams);
+    const username = searchParams.get('username');
+
+    // ✅ FIX 1: Handle missing username properly
+    if (!username) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Username is required',
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log("username received:", username);
+
+    // ✅ FIX 2: Validate only real value (no empty string fallback)
+    const result = UsernameQuerySchema.safeParse({ username });
 
     if (!result.success) {
       const usernameErrors = result.error.format().username?._errors || [];
@@ -25,28 +37,29 @@ export async function GET(request: Request) {
         {
           success: false,
           message:
-            usernameErrors?.length > 0
+            usernameErrors.length > 0
               ? usernameErrors.join(', ')
-              : 'Invalid query parameters',
+              : 'Invalid username',
         },
         { status: 400 }
       );
     }
 
-    const { username } = result.data;
+    const { username: validUsername } = result.data;
 
     const existingVerifiedUser = await UserModel.findOne({
-      username,
+      username: validUsername,
       isVerified: true,
     });
 
+    // ✅ FIX 3: Better status code
     if (existingVerifiedUser) {
       return NextResponse.json(
         {
           success: false,
           message: 'Username is already taken',
         },
-        { status: 200 }
+        { status: 409 } // Conflict
       );
     }
 
@@ -59,6 +72,7 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error('Error checking username:', error);
+
     return NextResponse.json(
       {
         success: false,
