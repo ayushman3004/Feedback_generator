@@ -44,15 +44,25 @@ const onSubmit = async (data: z.infer<typeof signInSchema>) => {
 
   setIsSubmitting(false);
 
-  // ❌ if (res?.ok) ← REMOVE THIS
-
   if (res?.error) {
     toast("User login failed");
     return;
   }
 
-  // ✅ FORCE REDIRECT
-  router.push("/dashboard");
+  // 🔥 IMPORTANT: wait for session to actually update
+  let session = await fetch("/api/auth/session").then(res => res.json());
+
+  // retry if not ready (rare but happens on Vercel)
+  if (!session?.user) {
+    await new Promise((r) => setTimeout(r, 500));
+    session = await fetch("/api/auth/session").then(res => res.json());
+  }
+
+  if (session?.user) {
+    router.push("/dashboard");
+  } else {
+    toast("Session not ready, try again");
+  }
 };
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
